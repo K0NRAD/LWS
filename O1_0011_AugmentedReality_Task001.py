@@ -27,7 +27,7 @@ Beschreibung:
         - spiegele das Bild
         - konvertiere das Bild vom BGR in das RGB Farbschema
         - starte eine Handerkennung
-        - wenn eine Hand gefunden wurde hole die Landmarks
+        - wenn eine Hand gefunden wurde hole die die Landmarks
         - zeichne die Fingerlinien
         - iteriere über die Landmarks und errechne die Position der
           Finger Landmarks auf der View
@@ -57,11 +57,10 @@ def main():
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 800)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 600)
 
+    mp_drawing = mp.solutions.drawing_utils
+    mp_drawing_styles = mp.solutions.drawing_styles
     mp_hands = mp.solutions.hands
-
     hands = mp_hands.Hands()
-
-    mp_draw = mp.solutions.drawing_utils
 
     finger_coordinates = [(8, 6), (12, 10), (16, 14), (20, 18)]
     thumb_coordinates = (4, 2)
@@ -75,18 +74,17 @@ def main():
         image = cv2.flip(image, 1)
 
         image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        results = hands.process(image_rgb)
 
-        result = hands.process(image_rgb)
+        multi_hand_landmarks = results.multi_hand_landmarks
 
-        multi_hand_landmarks = result.multi_hand_landmarks
-
+        up_count = 0
         if multi_hand_landmarks:
-            up_count = 0
-            for hand_landmarks in multi_hand_landmarks:
+            for multi_hand_landmark in multi_hand_landmarks:
                 hand_points = []
-                mp_draw.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+                mp_drawing.draw_landmarks(image, multi_hand_landmark, mp_hands.HAND_CONNECTIONS)
 
-                for i, hand_landmark in enumerate(hand_landmarks.landmark):
+                for i, hand_landmark in enumerate(multi_hand_landmark.landmark):
                     h, w, _ = image.shape
                     cx, cy = int(hand_landmark.x * w), int(hand_landmark.y * h)
                     hand_points.append((cx, cy))
@@ -94,38 +92,37 @@ def main():
                 for hand_point in hand_points:
                     cv2.circle(image, hand_point, 10, (200, 0, 200), cv2.FILLED)
 
-                # finger_coordinates = [(8, 6), (12, 10), (16, 14), (20, 18)]
                 for finger_coordinate in finger_coordinates:
                     if hand_points[finger_coordinate[0]][1] < hand_points[finger_coordinate[1]][1]:
                         up_count += 1
-                # (10, 50)
+
                 if hand_points[17][0] < hand_points[5][0]:
-                    # thumb_coordinates = (4, 2)
                     if hand_points[thumb_coordinates[0]][0] > hand_points[thumb_coordinates[1]][0]:
                         up_count += 1
                 elif hand_points[thumb_coordinates[0]][0] < hand_points[thumb_coordinates[1]][0]:
                     up_count += 1
 
-            up_count_txt = str(up_count)
+                up_count_text = str(up_count)
 
-            (w, h), b = cv2.getTextSize(up_count_txt, cv2.FONT_HERSHEY_PLAIN, 10, 25)
+                (w, h), b = cv2.getTextSize(up_count_text, cv2.FONT_HERSHEY_PLAIN, 10, 25)
 
-            label_w = 225
-            label_h = 200
-            label_x1 = 50
-            label_y1 = 25
-            label_x2 = label_x1 + label_w
-            label_y2 = label_y1 + label_h
-            label_coordinate1 = (label_x1, label_y1)
-            label_coordinate2 = (label_x2, label_y2)
+                label_w = 225
+                label_h = 200
+                label_x1 = 50
+                label_y1 = 25
+                label_x2 = label_x1 + label_w
+                label_y2 = label_y1 + label_h
+                lable_coordinate1 = (label_x1, label_y1)
+                lable_coordinate2 = (label_x2, label_y2)
 
-            txt_coordinate = (label_x1 + (label_w - w) // 2, label_y2 - 50)
-            cv2.rectangle(image, label_coordinate1, label_coordinate2, (255, 255, 0), cv2.FILLED)
-            cv2.putText(image, up_count_txt, txt_coordinate, cv2.FONT_HERSHEY_PLAIN, 10, (255, 0, 255), 25)
+                txt_coordinate = (label_x1 + (label_w - w) // 2, label_y2 - 50)
+                cv2.rectangle(image, lable_coordinate1, lable_coordinate2, (255, 255, 0), cv2.FILLED)
+                cv2.putText(image, up_count_text, txt_coordinate, cv2.FONT_HERSHEY_PLAIN, 10, (255, 0, 255), 25)
 
-        cv2.imshow('Image', image)
-        if cv2.waitKey(1) & 0xff == 27:
+        cv2.imshow('image', image)
+        if cv2.waitKey(1) == 27:
             break
+
 
 if __name__ == '__main__':
     main()
